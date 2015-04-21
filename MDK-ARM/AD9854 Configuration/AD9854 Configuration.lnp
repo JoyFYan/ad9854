@@ -1,0 +1,23 @@
+--cpu Cortex-M4.fp
+"ad9854 configuration\system_stm32f4xx.o"
+"ad9854 configuration\startup_stm32f407xx.o"
+"ad9854 configuration\stm32f4xx_it.o"
+"ad9854 configuration\stm32f4xx_hal_msp.o"
+"ad9854 configuration\main.o"
+"ad9854 configuration\stm32f4xx_hal_cortex.o"
+"ad9854 configuration\stm32f4xx_hal_pwr_ex.o"
+"ad9854 configuration\stm32f4xx_hal_rcc_ex.o"
+"ad9854 configuration\stm32f4xx_hal_pwr.o"
+"ad9854 configuration\stm32f4xx_hal.o"
+"ad9854 configuration\stm32f4xx_hal_dma_ex.o"
+"ad9854 configuration\stm32f4xx_hal_flash_ex.o"
+"ad9854 configuration\stm32f4xx_hal_dma.o"
+"ad9854 configuration\stm32f4xx_hal_gpio.o"
+"ad9854 configuration\stm32f4xx_hal_flash_ramfunc.o"
+"ad9854 configuration\stm32f4xx_hal_flash.o"
+"ad9854 configuration\stm32f4xx_hal_rcc.o"
+--library_type=microlib --strict --scatter "AD9854 Configuration\AD9854 Configuration.sct"
+
+--diag_suppress=L6329 --summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "AD9854 Configuration.map" -o "AD9854 Configuration\AD9854 Configuration.axf"
