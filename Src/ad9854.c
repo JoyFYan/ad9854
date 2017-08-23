@@ -1,48 +1,38 @@
 //=====================================================================
-//                    AD9854 Çı¶¯³ÌĞòÉè¼Æ
-//Ó²¼şÁ¬½Ó: P0    ¡ª¡ªData;	  
-//          P2    ¡ª¡ªAdr;    
-//          RESET ¡ª¡ªP3^7;     
-//          UDCLK ¡ª¡ªP3^6;   
-//          WR    ¡ª¡ªP3.5;	  
-//          RD    ¡ª¡ªp3.4;    
-//          FDATA ¡ª¡ªP3^3;     
-//          OSK   ¡ª¡ªP3^2;  
-//          VDD--Âß¼­µçÔ´(3.3V)
-//          VSS--GND(0V)  
+//                    AD9854 é©±åŠ¨ç¨‹åºè®¾è®¡
+//ç¡¬ä»¶è¿æ¥: P0    â€•â€•Data;
+//          P2    â€•â€•Adr;
+//          RESET â€•â€•P3^7;
+//          UDCLK â€•â€•P3^6;
+//          WR    â€•â€•P3.5;
+//          RD    â€•â€•p3.4;
+//          FDATA â€•â€•P3^3;
+//          OSK   â€•â€•P3^2;
+//          VDD--é€»è¾‘ç”µæº(3.3V)
+//          VSS--GND(0V)
 //AD9854.c
-//writer:¹ÈÓê 2008Äê8ÔÂ22ÈÕ~24ÈÕÓÚEDAÊµÑéÊÒ
-//ËµÃ÷£º±¾³ÌĞò»ùÓÚÓ²¼şµÄÍâ½Ó¾§ÕñÎª20MHZ
-//=====================================================================  
+//writer:è°·é›¨ 2008å¹´8æœˆ22æ—¥~24æ—¥äºEDAå®éªŒå®¤
+//ä¿®æ”¹ï¼šHuifeng 2017å¹´8æœˆ
+//è¯´æ˜ï¼šæœ¬ç¨‹åºåŸºäºç¡¬ä»¶çš„å¤–æ¥æ™¶æŒ¯ä¸º20MHZ
+//=====================================================================
 #include "ad9854.h"
-//#include "stm32f4xx_hal.h"
-//#include "stm32f4xx.h"
 
-#define AD9854_RST0 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_0, GPIO_PIN_RESET)
-#define AD9854_RST1 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_0, GPIO_PIN_SET)
-#define AD9854_UDCLK0  HAL_GPIO_WritePin(GPIOE,GPIO_Pin_1, GPIO_PIN_RESET)//AD9854¸üĞÂÊ±ÖÓ
-#define AD9854_UDCLK1  HAL_GPIO_WritePin(GPIOE,GPIO_Pin_1, GPIO_PIN_SET)//AD9854¸üĞÂÊ±ÖÓ
-#define AD9854_WR0 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_2, GPIO_PIN_RESET)
-#define AD9854_WR1 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_2, GPIO_PIN_SET)
-#define AD9854_RD0 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_3, GPIO_PIN_RESET)
-#define AD9854_RD1 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_3, GPIO_PIN_SET)
-#define AD9854_FDATA0 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_4, GPIO_PIN_RESET)
-#define AD9854_FDATA1 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_4, GPIO_PIN_SET)
-#define AD9854_OSK0 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_5, GPIO_PIN_RESET)
-#define AD9854_OSK1 HAL_GPIO_WritePin(GPIOE,GPIO_Pin_5, GPIO_PIN_SET)
+
 //#include "stm32f4xx_hal.h"
 #define uint  unsigned int
 #define uchar unsigned char
 #define ulong unsigned long
 
-uchar FreqWord[6];				 //6¸ö×Ö½ÚÆµÂÊ¿ØÖÆ×Ö
+#define DELAY   50
 
-//**********************ÒÔÏÂÎªÏµÍ³Ê±ÖÓÒÔ¼°ÆäÏà¹Ø±äÁ¿ÉèÖÃ**************************
+uchar FreqWord[6];				 //6ä¸ªå­—èŠ‚é¢‘ç‡æ§åˆ¶å­—
 
-/* 
-      ´Ë´¦¸ù¾İ×Ô¼ºµÄĞèÒªÉèÖÃÏµÍ³Ê±ÖÓÒÔ¼°ÓëÆäÏà¹ØµÄÒò×Ó£¬Ò»´ÎĞèÇÒÖ»Ğè¿ªÆôÒ»¸ö   
-      CLK_SetÎªÊ±ÖÓ±¶ÆµÉèÖÃ£¬¿ÉÉèÖÃ4~20±¶±¶Æµ£¬µ«×î´ó²»ÄÜ³¬¹ı300MHZ
-      Freq_mult_ulongºÍFreq_mult_doulle¾ùÎª2µÄ48´Î·½³ıÒÔÏµÍ³Ê±ÖÓ£¬Ò»¸öÎª³¤ÕûĞÎ£¬Ò»¸öÎªË«¾«¶ÈĞÍ
+//**********************ä»¥ä¸‹ä¸ºç³»ç»Ÿæ—¶é’Ÿä»¥åŠå…¶ç›¸å…³å˜é‡è®¾ç½®**************************
+
+/*
+      æ­¤å¤„æ ¹æ®è‡ªå·±çš„éœ€è¦è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿä»¥åŠä¸å…¶ç›¸å…³çš„å› å­ï¼Œä¸€æ¬¡éœ€ä¸”åªéœ€å¼€å¯ä¸€ä¸ª
+      CLK_Setä¸ºæ—¶é’Ÿå€é¢‘è®¾ç½®ï¼Œå¯è®¾ç½®4~20å€å€é¢‘ï¼Œä½†æœ€å¤§ä¸èƒ½è¶…è¿‡300MHZ
+      Freq_mult_ulongå’ŒFreq_mult_doulleå‡ä¸º2çš„48æ¬¡æ–¹é™¤ä»¥ç³»ç»Ÿæ—¶é’Ÿï¼Œä¸€ä¸ªä¸ºé•¿æ•´å½¢ï¼Œä¸€ä¸ªä¸ºåŒç²¾åº¦å‹
 */
 
 /*
@@ -51,16 +41,18 @@ const ulong  Freq_mult_ulong  = 3518437;
 const double Freq_mult_doulle = 3518437.2088832;
 */
 
+
 /*
 #define      CLK_Set            5
 const ulong  Freq_mult_ulong  = 2814750;
 const double Freq_mult_doulle = 2814749.76710656;
 */
 
-
+/*
 #define      CLK_Set            6
 const ulong  Freq_mult_ulong  = 2345625;
 const double Freq_mult_doulle = 2345624.80592213;
+*/
 
 
 /*
@@ -111,572 +103,607 @@ const ulong  Freq_mult_ulong  = 1005268;
 const double Freq_mult_doulle = 1005267.773966629;
 */
 
-/*
 #define      CLK_Set            15
 const ulong  Freq_mult_ulong  = 938250;
 const double Freq_mult_doulle = 938249.9223688533;
-*/
 
-//**************************ĞŞ¸ÄÓ²¼şÊ±ÒªĞŞ¸ÄµÄ²¿·Ö********************************
+//**************************ä¿®æ”¹ç¡¬ä»¶æ—¶è¦ä¿®æ”¹çš„éƒ¨åˆ†********************************
 
 
 //#define AD9854_DataBus P0
 //#define AD9854_AdrBus  P2
 
-//sbit AD9854_RST    = P3^7;   //AD9854¸´Î»¶Ë¿Ú
-//sbit AD9854_UDCLK  = P3^6;   //AD9854¸üĞÂÊ±ÖÓ
-//sbit AD9854_WR     = P3^5;   //AD9854Ğ´Ê¹ÄÜ£¬µÍÓĞĞ§
-//sbit AD9854_RD     = P3^4;   //AD9854¶ÁÊ¹ÄÜ£¬µÍÓĞĞ§
-//sbit AD9854_FDATA  = P3^3;   //AD9854 FSK,PSK¿ØÖÆ
-//sbit AD9854_OSK    = P3^2;   //AD9854 OSK¿ØÖÆ¶Ë
+//sbit AD9854_RST    = P3^7;   //AD9854å¤ä½ç«¯å£
+//sbit AD9854_UDCLK  = P3^6;   //AD9854æ›´æ–°æ—¶é’Ÿ
+//sbit AD9854_WR     = P3^5;   //AD9854å†™ä½¿èƒ½ï¼Œä½æœ‰æ•ˆ
+//sbit AD9854_RD     = P3^4;   //AD9854è¯»ä½¿èƒ½ï¼Œä½æœ‰æ•ˆ
+//sbit AD9854_FDATA  = P3^3;   //AD9854 FSK,PSKæ§åˆ¶
+//sbit AD9854_OSK    = P3^2;   //AD9854 OSKæ§åˆ¶ç«¯
 
-//**************************ÒÔÏÂ²¿·ÖÎªº¯Êı¶¨Òå********************************
+//**************************ä»¥ä¸‹éƒ¨åˆ†ä¸ºå‡½æ•°å®šä¹‰********************************
 
-//static void AD9854_WR_Byte(uchar addr,uchar dat);	  
-//extern void AD9854_Init(void);						  
-//static void Freq_convert(long Freq);	         	  
-//extern void AD9854_SetSine(ulong Freq,uint Shape);	  
-//static void Freq_double_convert(double Freq);		  
+//static void AD9854_WR_Byte(uchar addr,uchar dat);
+//extern void AD9854_Init(void);
+//static void Freq_convert(long Freq);
+//extern void AD9854_SetSine(ulong Freq,uint Shape);
+//static void Freq_double_convert(double Freq);
 //extern void AD9854_SetSine_double(double Freq,uint Shape);
-//extern void AD9854_InitFSK(void);				
-//extern void AD9854_SetFSK(ulong Freq1,ulong Freq2);					  
-//extern void AD9854_InitBPSK(void);					  
-//extern void AD9854_SetBPSK(uint Phase1,uint Phase2);					
-//extern void AD9854_InitOSK(void);					 
-//extern void AD9854_SetOSK(uchar RateShape);					  
-//extern void AD9854_InitAM(void);					 
-//extern void AD9854_SetAM(uint Shape);					
-//extern void AD9854_InitRFSK(void);					 
-//extern void AD9854_SetRFSK(ulong Freq_Low,ulong Freq_High,ulong Freq_Up_Down,ulong FreRate);				
+//extern void AD9854_InitFSK(void);
+//extern void AD9854_SetFSK(ulong Freq1,ulong Freq2);
+//extern void AD9854_InitBPSK(void);
+//extern void AD9854_SetBPSK(uint Phase1,uint Phase2);
+//extern void AD9854_InitOSK(void);
+//extern void AD9854_SetOSK(uchar RateShape);
+//extern void AD9854_InitAM(void);
+//extern void AD9854_SetAM(uint Shape);
+//extern void AD9854_InitRFSK(void);
+//extern void AD9854_SetRFSK(ulong Freq_Low,ulong Freq_High,ulong Freq_Up_Down,ulong FreRate);
 //static void delay (uint us);
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_WR_Byte(uchar addr,uchar dat)
-//º¯Êı¹¦ÄÜ:AD9854²¢ĞĞ¿ÚĞ´ÈëÊı¾İ
-//Èë¿Ú²ÎÊı:addr     6Î»µØÖ·
-//         dat      Ğ´ÈëµÄÊı¾İ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_WR_Byte(uchar addr,uchar dat)
+//å‡½æ•°åŠŸèƒ½:AD9854å¹¶è¡Œå£å†™å…¥æ•°æ®
+//å…¥å£å‚æ•°:addr     6ä½åœ°å€
+//         dat      å†™å…¥çš„æ•°æ®
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
-void AD9854_WR_Byte(uchar addr,uchar dat)
+void AD9854_WR_Byte(uchar addr, uchar dat)
 {
-	HAL_GPIO_WritePin(GPIOC,0x003f|addr,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(GPIOD,0x00ff|dat,GPIO_PIN_SET);
-	AD9854_WR0;
-	AD9854_WR1;	
+    uint32_t temp;
+
+    temp = (0x0000ffff & addr) | (0xffff0000 & (~addr << 16U));
+    GPIOC->BSRR = temp;
+    temp = (0x0000ffff & dat) | (0xffff0000 & (~dat << 16U));
+    GPIOD->BSRR = temp;
+    AD9854_WR0;
+    delay(DELAY);
+    AD9854_WR1;
+    delay(DELAY);
+}
+
+uchar AD9854_RD_Byte(uchar addr)
+{
+    uchar data;
+    uint32_t temp;
+
+    temp = (0x0000ffff & addr) | (0xffff0000 & (~addr << 16U));
+    GPIOC->BSRR = temp;
+    AD9854_RD0;
+    delay(DELAY);
+    data = GPIOD->IDR;
+    AD9854_RD1;
+    delay(DELAY);
+
+    return data;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_Init(void)
-//º¯Êı¹¦ÄÜ:AD9854³õÊ¼»¯
-//Èë¿Ú²ÎÊı:ÎŞ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_Init(void)
+//å‡½æ•°åŠŸèƒ½:AD9854åˆå§‹åŒ–
+//å…¥å£å‚æ•°:æ— 
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_Init(void)
 {
-	AD9854_WR1;//½«¶Á¡¢Ğ´¿ØÖÆ¶Ë¿ÚÉèÎªÎŞĞ§
+
+    AD9854_WR1;//å°†è¯»ã€å†™æ§åˆ¶ç«¯å£è®¾ä¸ºæ— æ•ˆ
     AD9854_RD1;
     AD9854_UDCLK0;
-    AD9854_RST1;                 //¸´Î»AD9854
+    AD9854_RST1;                 //å¤ä½AD9854
+    delay(DELAY);
     AD9854_RST0;
 
-	AD9854_WR_Byte(0x1d,0x10);	           //¹Ø±Õ±È½ÏÆ÷
-	AD9854_WR_Byte(0x1e,CLK_Set);	   //ÉèÖÃÏµÍ³Ê±ÖÓ±¶Æµ            
-	AD9854_WR_Byte(0x1f,0x00);	   //ÉèÖÃÏµÍ³ÎªÄ£Ê½0£¬ÓÉÍâ²¿¸üĞÂ
-	AD9854_WR_Byte(0x20,0x60);	   //ÉèÖÃÎª¿Éµ÷½Ú·ù¶È£¬È¡Ïû²åÖµ²¹³¥
+    AD9854_WR_Byte(0x1d, 0x10);	          //å…³é—­æ¯”è¾ƒå™¨
+    AD9854_WR_Byte(0x1e, CLK_Set);	  //è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿå€é¢‘
+    AD9854_WR_Byte(0x1f, 0x00);	  //è®¾ç½®ç³»ç»Ÿä¸ºæ¨¡å¼0ï¼Œç”±å¤–éƒ¨æ›´æ–°
+    AD9854_WR_Byte(0x20, 0x60);	  //è®¾ç½®ä¸ºå¯è°ƒèŠ‚å¹…åº¦ï¼Œå–æ¶ˆæ’å€¼è¡¥å¿
 
-	AD9854_UDCLK1;               //¸üĞÂAD9854Êä³ö
+    AD9854_UDCLK1;               //æ›´æ–°AD9854è¾“å‡º
+    delay(DELAY);
     AD9854_UDCLK0;
+
+    HAL_Delay(10);
+    //GPIOC->BSRR = 0x0000ffff;
+    //GPIOD->BSRR = 0x0000ffff;
+
+    //data = AD9854_RD_Byte(0x1d);
+    //data = AD9854_RD_Byte(0x1e);
+    //data = AD9854_RD_Byte(0x1f);
+    //data = AD9854_RD_Byte(0x20);
+
+    HAL_Delay(10);
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void Freq_convert(long Freq)
-//º¯Êı¹¦ÄÜ:ÕıÏÒĞÅºÅÆµÂÊÊı¾İ×ª»»
-//Èë¿Ú²ÎÊı:Freq   ĞèÒª×ª»»µÄÆµÂÊ£¬È¡Öµ´Ó0~SYSCLK/2
-//³ö¿Ú²ÎÊı:ÎŞ   µ«ÊÇÓ°ÏìÈ«¾Ö±äÁ¿FreqWord[6]µÄÖµ
-//ËµÃ÷£º   ¸ÃËã·¨Î»¶à×Ö½ÚÏà³ËËã·¨£¬ÓĞ¹«Ê½FTW = (Desired Output Frequency ¡Á 2N)/SYSCLK
-//         µÃµ½¸ÃËã·¨£¬ÆäÖĞN=48£¬Desired Output Frequency ÎªËùĞèÒªµÄÆµÂÊ£¬¼´Freq£¬SYSCLK
-//         Îª¿É±à³ÌµÄÏµÍ³Ê±ÖÓ£¬FTWÎª48BitµÄÆµÂÊ¿ØÖÆ×Ö£¬¼´FreqWord[6]
+//å‡½æ•°åç§°:void Freq_convert(long Freq)
+//å‡½æ•°åŠŸèƒ½:æ­£å¼¦ä¿¡å·é¢‘ç‡æ•°æ®è½¬æ¢
+//å…¥å£å‚æ•°:Freq   éœ€è¦è½¬æ¢çš„é¢‘ç‡ï¼Œå–å€¼ä»0~SYSCLK/2
+//å‡ºå£å‚æ•°:æ—    ä½†æ˜¯å½±å“å…¨å±€å˜é‡FreqWord[6]çš„å€¼
+//è¯´æ˜ï¼š   è¯¥ç®—æ³•ä½å¤šå­—èŠ‚ç›¸ä¹˜ç®—æ³•ï¼Œæœ‰å…¬å¼FTW = (Desired Output Frequency Ã— 2N)/SYSCLK
+//         å¾—åˆ°è¯¥ç®—æ³•ï¼Œå…¶ä¸­N=48ï¼ŒDesired Output Frequency ä¸ºæ‰€éœ€è¦çš„é¢‘ç‡ï¼Œå³Freqï¼ŒSYSCLK
+//         ä¸ºå¯ç¼–ç¨‹çš„ç³»ç»Ÿæ—¶é’Ÿï¼ŒFTWä¸º48Bitçš„é¢‘ç‡æ§åˆ¶å­—ï¼Œå³FreqWord[6]
 //====================================================================================
-void Freq_convert(long Freq)   
+void Freq_convert(long Freq)
 {
     ulong FreqBuf;
-    ulong Temp=Freq_mult_ulong;   	       
+    ulong Temp = Freq_mult_ulong;
 
-	uchar Array_Freq[4];			     //½«ÊäÈëÆµÂÊÒò×Ó·ÖÎªËÄ¸ö×Ö½Ú
-	Array_Freq[0]=(uchar)Freq;
-	Array_Freq[1]=(uchar)(Freq>>8);
-	Array_Freq[2]=(uchar)(Freq>>16);
-	Array_Freq[3]=(uchar)(Freq>>24);
+    uchar Array_Freq[4];			     //å°†è¾“å…¥é¢‘ç‡å› å­åˆ†ä¸ºå››ä¸ªå­—èŠ‚
+    Array_Freq[0] = (uchar)Freq;
+    Array_Freq[1] = (uchar)(Freq >> 8);
+    Array_Freq[2] = (uchar)(Freq >> 16);
+    Array_Freq[3] = (uchar)(Freq >> 24);
 
-	FreqBuf=Temp*Array_Freq[0];                  
-    FreqWord[0]=FreqBuf;    
-    FreqBuf>>=8;
+    FreqBuf = Temp * Array_Freq[0];
+    FreqWord[0] = FreqBuf;
+    FreqBuf >>= 8;
 
-    FreqBuf+=(Temp*Array_Freq[1]);
-    FreqWord[1]=FreqBuf;
-    FreqBuf>>=8;
+    FreqBuf += (Temp * Array_Freq[1]);
+    FreqWord[1] = FreqBuf;
+    FreqBuf >>= 8;
 
-    FreqBuf+=(Temp*Array_Freq[2]);
-    FreqWord[2]=FreqBuf;
-    FreqBuf>>=8;
+    FreqBuf += (Temp * Array_Freq[2]);
+    FreqWord[2] = FreqBuf;
+    FreqBuf >>= 8;
 
-	FreqBuf+=(Temp*Array_Freq[3]);
-    FreqWord[3]=FreqBuf;
-    FreqBuf>>=8;
+    FreqBuf += (Temp * Array_Freq[3]);
+    FreqWord[3] = FreqBuf;
+    FreqBuf >>= 8;
 
-    FreqWord[4]=FreqBuf;
-    FreqWord[5]=FreqBuf>>8;			
-}  
+    FreqWord[4] = FreqBuf;
+    FreqWord[5] = FreqBuf >> 8;
+}
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetSine(ulong Freq,uint Shape)
-//º¯Êı¹¦ÄÜ:AD9854ÕıÏÒ²¨²úÉú³ÌĞò
-//Èë¿Ú²ÎÊı:Freq   ÆµÂÊÉèÖÃ£¬È¡Öµ·¶Î§Îª0~(1/2)*SYSCLK
-//         Shape  ·ù¶ÈÉèÖÃ. Îª12 Bit,È¡Öµ·¶Î§Îª(0~4095) ,È¡ÖµÔ½´ó,·ù¶ÈÔ½´ó 
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_SetSine(ulong Freq,uint Shape)
+//å‡½æ•°åŠŸèƒ½:AD9854æ­£å¼¦æ³¢äº§ç”Ÿç¨‹åº
+//å…¥å£å‚æ•°:Freq   é¢‘ç‡è®¾ç½®ï¼Œå–å€¼èŒƒå›´ä¸º0~(1/2)*SYSCLK
+//         Shape  å¹…åº¦è®¾ç½®. ä¸º12 Bit,å–å€¼èŒƒå›´ä¸º(0~4095) ,å–å€¼è¶Šå¤§,å¹…åº¦è¶Šå¤§
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
-void AD9854_SetSine(ulong Freq,uint Shape)
+void AD9854_SetSine(ulong Freq, uint Shape)
 {
-	uchar count;
-	uchar Adress;
+    uchar count;
+    uchar Adress;
 
-	Adress = 0x04;                        //Ñ¡ÔñÆµÂÊ¿ØÖÆ×ÖµØÖ·µÄ³õÖµ
+    Adress = 0x04;                        //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—åœ°å€çš„åˆå€¼
 
-	Freq_convert(Freq);		           //ÆµÂÊ×ª»»
+    Freq_convert(Freq);		           //é¢‘ç‡è½¬æ¢
 
-	for(count=6;count>0;)	          //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    for(count = 6; count > 0;)	     //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress++, FreqWord[--count]);
     }
-	
-	AD9854_WR_Byte(0x21,Shape>>8);	  //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	  //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));
 
-	AD9854_UDCLK1;                    //¸üĞÂAD9854Êä³ö
+    AD9854_WR_Byte(0x21, Shape >> 8);	 //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
+
+    AD9854_WR_Byte(0x23, Shape >> 8);	 //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
+
+    AD9854_UDCLK1;                    //æ›´æ–°AD9854è¾“å‡º
+    delay(DELAY);
     AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void Freq_doublt_convert(double Freq)
-//º¯Êı¹¦ÄÜ:ÕıÏÒĞÅºÅÆµÂÊÊı¾İ×ª»»
-//Èë¿Ú²ÎÊı:Freq   ĞèÒª×ª»»µÄÆµÂÊ£¬È¡Öµ´Ó0~SYSCLK/2
-//³ö¿Ú²ÎÊı:ÎŞ   µ«ÊÇÓ°ÏìÈ«¾Ö±äÁ¿FreqWord[6]µÄÖµ
-//ËµÃ÷£º   ÓĞ¹«Ê½FTW = (Desired Output Frequency ¡Á 2N)/SYSCLKµÃµ½¸Ãº¯Êı£¬
-//         ÆäÖĞN=48£¬Desired Output Frequency ÎªËùĞèÒªµÄÆµÂÊ£¬¼´Freq£¬SYSCLK
-//         Îª¿É±à³ÌµÄÏµÍ³Ê±ÖÓ£¬FTWÎª48BitµÄÆµÂÊ¿ØÖÆ×Ö£¬¼´FreqWord[6]
-//×¢Òâ£º   ¸Ãº¯ÊıÓëÉÏÃæº¯ÊıµÄÇø±ğÎª¸Ãº¯ÊıµÄÈë¿Ú²ÎÊıÎªdouble£¬¿ÉÊ¹ĞÅºÅµÄÆµÂÊ¸ü¾«È·
-//         ¹ÈÓê½¨ÒéÔÚ100HZÒÔÏÂÓÃ±¾º¯Êı£¬ÔÚ¸ßÓÚ100HZµÄÇé¿öÏÂÓÃº¯Êıvoid Freq_convert(long Freq)
+//å‡½æ•°åç§°:void Freq_doublt_convert(double Freq)
+//å‡½æ•°åŠŸèƒ½:æ­£å¼¦ä¿¡å·é¢‘ç‡æ•°æ®è½¬æ¢
+//å…¥å£å‚æ•°:Freq   éœ€è¦è½¬æ¢çš„é¢‘ç‡ï¼Œå–å€¼ä»0~SYSCLK/2
+//å‡ºå£å‚æ•°:æ—    ä½†æ˜¯å½±å“å…¨å±€å˜é‡FreqWord[6]çš„å€¼
+//è¯´æ˜ï¼š   æœ‰å…¬å¼FTW = (Desired Output Frequency Ã— 2N)/SYSCLKå¾—åˆ°è¯¥å‡½æ•°ï¼Œ
+//         å…¶ä¸­N=48ï¼ŒDesired Output Frequency ä¸ºæ‰€éœ€è¦çš„é¢‘ç‡ï¼Œå³Freqï¼ŒSYSCLK
+//         ä¸ºå¯ç¼–ç¨‹çš„ç³»ç»Ÿæ—¶é’Ÿï¼ŒFTWä¸º48Bitçš„é¢‘ç‡æ§åˆ¶å­—ï¼Œå³FreqWord[6]
+//æ³¨æ„ï¼š   è¯¥å‡½æ•°ä¸ä¸Šé¢å‡½æ•°çš„åŒºåˆ«ä¸ºè¯¥å‡½æ•°çš„å…¥å£å‚æ•°ä¸ºdoubleï¼Œå¯ä½¿ä¿¡å·çš„é¢‘ç‡æ›´ç²¾ç¡®
+//         è°·é›¨å»ºè®®åœ¨100HZä»¥ä¸‹ç”¨æœ¬å‡½æ•°ï¼Œåœ¨é«˜äº100HZçš„æƒ…å†µä¸‹ç”¨å‡½æ•°void Freq_convert(long Freq)
 //====================================================================================
-void Freq_double_convert(double Freq)   
+void Freq_double_convert(double Freq)
 {
-	ulong Low32;
-	uint  High16;
-    double Temp=Freq_mult_doulle;   	            //23ca99Îª2µÄ48´Î·½³ıÒÔ120M
-	Freq*=(double)(Temp);
+    ulong Low32;
+    uint  High16;
+    double Temp = Freq_mult_doulle;   	          //23ca99ä¸º2çš„48æ¬¡æ–¹é™¤ä»¥120M
+    Freq *= (double)(Temp);
 //	1 0000 0000 0000 0000 0000 0000 0000 0000 = 4294967295
-	High16 = (int)(Freq/4294967295);                  //2^32 = 4294967295
-	Freq -= (double)High16*4294967295;
-	Low32 = (ulong)Freq;
+    High16 = (int)(Freq / 4294967295);                //2^32 = 4294967295
+    Freq -= (double)High16 * 4294967295;
+    Low32 = (ulong)Freq;
 
-    FreqWord[0]=Low32;	     
-    FreqWord[1]=Low32>>8;
-    FreqWord[2]=Low32>>16;
-    FreqWord[3]=Low32>>24;
-    FreqWord[4]=High16;
-    FreqWord[5]=High16>>8;			
-} 
+    FreqWord[0] = Low32;
+    FreqWord[1] = Low32 >> 8;
+    FreqWord[2] = Low32 >> 16;
+    FreqWord[3] = Low32 >> 24;
+    FreqWord[4] = High16;
+    FreqWord[5] = High16 >> 8;
+}
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetSine_double(double Freq,uint Shape)
-//º¯Êı¹¦ÄÜ:AD9854ÕıÏÒ²¨²úÉú³ÌĞò
-//Èë¿Ú²ÎÊı:Freq   ÆµÂÊÉèÖÃ£¬È¡Öµ·¶Î§Îª0~1/2*SYSCLK
-//         Shape  ·ù¶ÈÉèÖÃ. Îª12 Bit,È¡Öµ·¶Î§Îª(0~4095) 
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_SetSine_double(double Freq,uint Shape)
+//å‡½æ•°åŠŸèƒ½:AD9854æ­£å¼¦æ³¢äº§ç”Ÿç¨‹åº
+//å…¥å£å‚æ•°:Freq   é¢‘ç‡è®¾ç½®ï¼Œå–å€¼èŒƒå›´ä¸º0~1/2*SYSCLK
+//         Shape  å¹…åº¦è®¾ç½®. ä¸º12 Bit,å–å€¼èŒƒå›´ä¸º(0~4095)
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
-void AD9854_SetSine_double(double Freq,uint Shape)
+void AD9854_SetSine_double(double Freq, uint Shape)
 {
-	uchar count=0;
-	uchar Adress;
+    uchar count = 0;
+    uchar Adress;
 
-	Adress=0x04;						     //Ñ¡ÔñÆµÂÊ¿ØÖÆ×Ö1µØÖ·µÄ³õÖµ
+    Adress = 0x04;						   //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—1åœ°å€çš„åˆå€¼
 
-	Freq_double_convert(Freq);		           //ÆµÂÊ×ª»»
-	 
-	for(count=6;count>0;)	                    //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    Freq_double_convert(Freq);		           //é¢‘ç‡è½¬æ¢
+
+    for(count = 6; count > 0;)	               //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress++, FreqWord[--count]);
     }
-	
-	AD9854_WR_Byte(0x21,Shape>>8);	  //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	  //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));
 
-	AD9854_UDCLK1;                    //¸üĞÂAD9854Êä³ö
+    AD9854_WR_Byte(0x21, Shape >> 8);	 //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
+
+    AD9854_WR_Byte(0x23, Shape >> 8);	 //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
+
+    AD9854_UDCLK1;                    //æ›´æ–°AD9854è¾“å‡º
     AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_InitFSK(void)
-//º¯Êı¹¦ÄÜ:AD9854µÄFSK³õÊ¼»¯
-//Èë¿Ú²ÎÊı:ÎŞ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_InitFSK(void)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„FSKåˆå§‹åŒ–
+//å…¥å£å‚æ•°:æ— 
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_InitFSK(void)
 {
-	AD9854_WR1;                        //½«¶Á¡¢Ğ´¿ØÖÆ¶Ë¿ÚÉèÎªÎŞĞ§
+    AD9854_WR1;                        //å°†è¯»ã€å†™æ§åˆ¶ç«¯å£è®¾ä¸ºæ— æ•ˆ
     AD9854_RD1;
     AD9854_UDCLK0;
-    AD9854_RST1;                        //¸´Î»AD9854
-    AD9854_RST0;	
+    AD9854_RST1;                        //å¤ä½AD9854
+    AD9854_RST0;
 
-	AD9854_WR_Byte(0x1d,0x10);	       //¹Ø±Õ±È½ÏÆ÷
-	AD9854_WR_Byte(0x1e,CLK_Set);	   //ÉèÖÃÏµÍ³Ê±ÖÓ±¶Æµ
-	AD9854_WR_Byte(0x1f,0x02);	       //ÉèÖÃÏµÍ³ÎªÄ£Ê½1£¬ÓÉÍâ²¿¸üĞÂ
-	AD9854_WR_Byte(0x20,0x60);	      //ÉèÖÃÎª¿Éµ÷½Ú·ù¶È£¬È¡Ïû²åÖµ²¹³¥
+    AD9854_WR_Byte(0x1d, 0x10);	      //å…³é—­æ¯”è¾ƒå™¨
+    AD9854_WR_Byte(0x1e, CLK_Set);	  //è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿå€é¢‘
+    AD9854_WR_Byte(0x1f, 0x02);	      //è®¾ç½®ç³»ç»Ÿä¸ºæ¨¡å¼1ï¼Œç”±å¤–éƒ¨æ›´æ–°
+    AD9854_WR_Byte(0x20, 0x60);	     //è®¾ç½®ä¸ºå¯è°ƒèŠ‚å¹…åº¦ï¼Œå–æ¶ˆæ’å€¼è¡¥å¿
 
-	AD9854_UDCLK1;                  //¸üĞÂAD9854Êä³ö
+    AD9854_UDCLK1;                  //æ›´æ–°AD9854è¾“å‡º
     AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetFSK(ulong Freq1,ulong Freq2)
-//º¯Êı¹¦ÄÜ:AD9854µÄFSKÉèÖÃ
-//Èë¿Ú²ÎÊı:Freq1   FSKÆµÂÊ1   
-//         Freq2   FSKÆµÂÊ2
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_SetFSK(ulong Freq1,ulong Freq2)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„FSKè®¾ç½®
+//å…¥å£å‚æ•°:Freq1   FSKé¢‘ç‡1
+//         Freq2   FSKé¢‘ç‡2
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
-void AD9854_SetFSK(ulong Freq1,ulong Freq2)
+void AD9854_SetFSK(ulong Freq1, ulong Freq2)
 {
-    uchar count=6;
-	uchar Adress1,Adress2;
+    uchar count = 6;
+    uchar Adress1, Adress2;
 
-	const uint Shape=4000;	      //·ù¶ÈÉèÖÃ. Îª12 Bit,È¡Öµ·¶Î§Îª(0~4095)
-	
-	Adress1=0x04;				 //Ñ¡ÔñÆµÂÊ¿ØÖÆ×Ö1µØÖ·µÄ³õÖµ
-	Adress2=0x0a;				 //Ñ¡ÔñÆµÂÊ¿ØÖÆ×Ö2µØÖ·µÄ³õÖµ
-	
-	Freq_convert(Freq1);               //ÆµÂÊ×ª»»1
-	
-	for(count=6;count>0;)	          //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
-    {
-		AD9854_WR_Byte(Adress1++,FreqWord[--count]);
-    }
-	
-	Freq_convert(Freq2);               //ÆµÂÊ×ª»»2
+    const uint Shape = 4000;	    //å¹…åº¦è®¾ç½®. ä¸º12 Bit,å–å€¼èŒƒå›´ä¸º(0~4095)
 
-	for(count=6;count>0;)	          //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    Adress1 = 0x04;				 //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—1åœ°å€çš„åˆå€¼
+    Adress2 = 0x0a;				 //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—2åœ°å€çš„åˆå€¼
+
+    Freq_convert(Freq1);               //é¢‘ç‡è½¬æ¢1
+
+    for(count = 6; count > 0;)	     //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress2++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress1++, FreqWord[--count]);
     }
 
-	AD9854_WR_Byte(0x21,Shape>>8);	      //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	     //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));
+    Freq_convert(Freq2);               //é¢‘ç‡è½¬æ¢2
 
-	AD9854_UDCLK1;                    //¸üĞÂAD9854Êä³ö
-    AD9854_UDCLK0;		
+    for(count = 6; count > 0;)	     //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
+    {
+        AD9854_WR_Byte(Adress2++, FreqWord[--count]);
+    }
+
+    AD9854_WR_Byte(0x21, Shape >> 8);	   //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
+
+    AD9854_WR_Byte(0x23, Shape >> 8);	  //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
+
+    AD9854_UDCLK1;                    //æ›´æ–°AD9854è¾“å‡º
+    AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_InitBPSK(void)
-//º¯Êı¹¦ÄÜ:AD9854µÄBPSK³õÊ¼»¯
-//Èë¿Ú²ÎÊı:ÎŞ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_InitBPSK(void)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„BPSKåˆå§‹åŒ–
+//å…¥å£å‚æ•°:æ— 
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_InitBPSK(void)
 {
-	AD9854_WR1;                    //½«¶Á¡¢Ğ´¿ØÖÆ¶Ë¿ÚÉèÎªÎŞĞ§
+    AD9854_WR1;                    //å°†è¯»ã€å†™æ§åˆ¶ç«¯å£è®¾ä¸ºæ— æ•ˆ
     AD9854_RD1;
     AD9854_UDCLK0;
-    AD9854_RST1;                   //¸´Î»AD9854
+    AD9854_RST1;                   //å¤ä½AD9854
     AD9854_RST0;
 
-	AD9854_WR_Byte(0x1d,0x10);	       //¹Ø±Õ±È½ÏÆ÷
-	AD9854_WR_Byte(0x1e,CLK_Set);	   //ÉèÖÃÏµÍ³Ê±ÖÓ±¶Æµ
-	AD9854_WR_Byte(0x1f,0x08);	      //ÉèÖÃÏµÍ³ÎªÄ£Ê½4£¬ÓÉÍâ²¿¸üĞÂ
-	AD9854_WR_Byte(0x20,0x60);	      //ÉèÖÃÎª¿Éµ÷½Ú·ù¶È£¬È¡Ïû²åÖµ²¹³¥
+    AD9854_WR_Byte(0x1d, 0x10);	      //å…³é—­æ¯”è¾ƒå™¨
+    AD9854_WR_Byte(0x1e, CLK_Set);	  //è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿå€é¢‘
+    AD9854_WR_Byte(0x1f, 0x08);	     //è®¾ç½®ç³»ç»Ÿä¸ºæ¨¡å¼4ï¼Œç”±å¤–éƒ¨æ›´æ–°
+    AD9854_WR_Byte(0x20, 0x60);	     //è®¾ç½®ä¸ºå¯è°ƒèŠ‚å¹…åº¦ï¼Œå–æ¶ˆæ’å€¼è¡¥å¿
 
-	AD9854_UDCLK1;                //¸üĞÂAD9854Êä³ö
+    AD9854_UDCLK1;                //æ›´æ–°AD9854è¾“å‡º
     AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetBPSK(uint Phase1,uint Phase2)
-//º¯Êı¹¦ÄÜ:AD9854µÄBPSKÉèÖÃ
-//Èë¿Ú²ÎÊı:Phase1   µ÷ÖÆÏàÎ»1
-//         Phase2	µ÷ÖÆÏàÎ»2
-//³ö¿Ú²ÎÊı:ÎŞ
-//ËµÃ÷£º   ÏàÎ»Îª14Bit£¬È¡Öµ´Ó0~16383£¬¹ÈÓê½¨ÒéÔÚÓÃ±¾º¯ÊıµÄÊ±ºò½«Phase1ÉèÖÃÎª0£¬
-//         ½«Phase1ÉèÖÃÎª8192£¬180¡ãÏàÎ»
+//å‡½æ•°åç§°:void AD9854_SetBPSK(uint Phase1,uint Phase2)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„BPSKè®¾ç½®
+//å…¥å£å‚æ•°:Phase1   è°ƒåˆ¶ç›¸ä½1
+//         Phase2	è°ƒåˆ¶ç›¸ä½2
+//å‡ºå£å‚æ•°:æ— 
+//è¯´æ˜ï¼š   ç›¸ä½ä¸º14Bitï¼Œå–å€¼ä»0~16383ï¼Œè°·é›¨å»ºè®®åœ¨ç”¨æœ¬å‡½æ•°çš„æ—¶å€™å°†Phase1è®¾ç½®ä¸º0ï¼Œ
+//         å°†Phase1è®¾ç½®ä¸º8192ï¼Œ180Â°ç›¸ä½
 //====================================================================================
-void AD9854_SetBPSK(uint Phase1,uint Phase2)
+void AD9854_SetBPSK(uint Phase1, uint Phase2)
 {
-	uchar count;
+    uchar count;
 
-	const ulong Freq=60000;
-    const uint Shape=4000;
+    const ulong Freq = 60000;
+    const uint Shape = 4000;
 
-	uchar Adress;
-	Adress=0x04;                           //Ñ¡ÔñÆµÂÊ¿ØÖÆ×Ö1µØÖ·µÄ³õÖµ
+    uchar Adress;
+    Adress = 0x04;                         //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—1åœ°å€çš„åˆå€¼
 
-	AD9854_WR_Byte(0x00,Phase1>>8);	           //ÉèÖÃÏàÎ»1
-	AD9854_WR_Byte(0x01,(uchar)(Phase1&0xff));
-	
-	AD9854_WR_Byte(0x02,Phase2>>8);	          //ÉèÖÃÏàÎ»2
-	AD9854_WR_Byte(0x03,(uchar)(Phase2&0xff));
+    AD9854_WR_Byte(0x00, Phase1 >> 8);	        //è®¾ç½®ç›¸ä½1
+    AD9854_WR_Byte(0x01, (uchar)(Phase1 & 0xff));
 
-	Freq_convert(Freq);                            //ÆµÂÊ×ª»»
+    AD9854_WR_Byte(0x02, Phase2 >> 8);	       //è®¾ç½®ç›¸ä½2
+    AD9854_WR_Byte(0x03, (uchar)(Phase2 & 0xff));
 
-	for(count=6;count>0;)	                         //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    Freq_convert(Freq);                            //é¢‘ç‡è½¬æ¢
+
+    for(count = 6; count > 0;)	                    //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress++, FreqWord[--count]);
     }
 
-	AD9854_WR_Byte(0x21,Shape>>8);	                  //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	               //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));
+    AD9854_WR_Byte(0x21, Shape >> 8);	               //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
 
-	AD9854_UDCLK1;                                //¸üĞÂAD9854Êä³ö
-    AD9854_UDCLK0;	
+    AD9854_WR_Byte(0x23, Shape >> 8);	            //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
+
+    AD9854_UDCLK1;                                //æ›´æ–°AD9854è¾“å‡º
+    AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_InitOSK(void)
-//º¯Êı¹¦ÄÜ:AD9854µÄOSK³õÊ¼»¯
-//Èë¿Ú²ÎÊı:ÎŞ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_InitOSK(void)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„OSKåˆå§‹åŒ–
+//å…¥å£å‚æ•°:æ— 
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_InitOSK(void)
 {
-	AD9854_WR1;                           //½«¶Á¡¢Ğ´¿ØÖÆ¶Ë¿ÚÉèÎªÎŞĞ§
-	AD9854_RD1;
-	AD9854_UDCLK0;
-	AD9854_RST1;                          //¸´Î»AD9854
-	AD9854_RST0;
+    AD9854_WR1;                           //å°†è¯»ã€å†™æ§åˆ¶ç«¯å£è®¾ä¸ºæ— æ•ˆ
+    AD9854_RD1;
+    AD9854_UDCLK0;
+    AD9854_RST1;                          //å¤ä½AD9854
+    AD9854_RST0;
 
-    AD9854_WR_Byte(0x1d,0x10);	           //¹Ø±Õ±È½ÏÆ÷
-	AD9854_WR_Byte(0x1e,CLK_Set);	       //ÉèÖÃÏµÍ³Ê±ÖÓ±¶Æµ
-	AD9854_WR_Byte(0x1f,0x00);	           //ÉèÖÃÏµÍ³ÎªÄ£Ê½0£¬ÓÉÍâ²¿¸üĞÂ
-	AD9854_WR_Byte(0x20,0x70);	           //ÉèÖÃÎª¿Éµ÷½Ú·ù¶È£¬È¡Ïû²åÖµ²¹³¥,Í¨¶ÏÕûĞÎÄÚ²¿¿ØÖÆ
+    AD9854_WR_Byte(0x1d, 0x10);	          //å…³é—­æ¯”è¾ƒå™¨
+    AD9854_WR_Byte(0x1e, CLK_Set);	      //è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿå€é¢‘
+    AD9854_WR_Byte(0x1f, 0x00);	          //è®¾ç½®ç³»ç»Ÿä¸ºæ¨¡å¼0ï¼Œç”±å¤–éƒ¨æ›´æ–°
+    AD9854_WR_Byte(0x20, 0x70);	          //è®¾ç½®ä¸ºå¯è°ƒèŠ‚å¹…åº¦ï¼Œå–æ¶ˆæ’å€¼è¡¥å¿,é€šæ–­æ•´å½¢å†…éƒ¨æ§åˆ¶
 
-	AD9854_UDCLK1;                        //¸üĞÂAD9854Êä³ö
-	AD9854_UDCLK0;
+    AD9854_UDCLK1;                        //æ›´æ–°AD9854è¾“å‡º
+    AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetOSK(uchar RateShape)
-//º¯Êı¹¦ÄÜ:AD9854µÄOSKÉèÖÃ
-//Èë¿Ú²ÎÊı: RateShape    OSKĞ±ÂÊ,È¡ÖµÎª4~255£¬Ğ¡ÓÚ4ÔòÎŞĞ§
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_SetOSK(uchar RateShape)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„OSKè®¾ç½®
+//å…¥å£å‚æ•°: RateShape    OSKæ–œç‡,å–å€¼ä¸º4~255ï¼Œå°äº4åˆ™æ— æ•ˆ
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_SetOSK(uchar RateShape)
 {
-	uchar count;
+    uchar count;
 
-	const ulong Freq=60000;			 //ÉèÖÃÔØÆµ
-    const uint  Shape=4000;			//·ù¶ÈÉèÖÃ. Îª12 Bit,È¡Öµ·¶Î§Îª(0~4095)
+    const ulong Freq = 60000;			 //è®¾ç½®è½½é¢‘
+    const uint  Shape = 4000;			//å¹…åº¦è®¾ç½®. ä¸º12 Bit,å–å€¼èŒƒå›´ä¸º(0~4095)
 
-	uchar Adress;
-	Adress=0x04;               //Ñ¡ÔñÆµÂÊ¿ØÖÆ×ÖµØÖ·µÄ³õÖµ
+    uchar Adress;
+    Adress = 0x04;             //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—åœ°å€çš„åˆå€¼
 
-	Freq_convert(Freq);                       //ÆµÂÊ×ª»»
+    Freq_convert(Freq);                       //é¢‘ç‡è½¬æ¢
 
-	for(count=6;count>0;)	                         //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    for(count = 6; count > 0;)	                    //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress++, FreqWord[--count]);
     }
 
-	AD9854_WR_Byte(0x21,Shape>>8);	                  //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	                  //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));  	 
+    AD9854_WR_Byte(0x21, Shape >> 8);	               //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
+
+    AD9854_WR_Byte(0x23, Shape >> 8);	               //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
 
 
-    AD9854_WR_Byte(0x25,RateShape);				       //ÉèÖÃOSKĞ±ÂÊ
+    AD9854_WR_Byte(0x25, RateShape);				      //è®¾ç½®OSKæ–œç‡
 
-	AD9854_UDCLK1;                                //¸üĞÂAD9854Êä³ö
-    AD9854_UDCLK0;	
+    AD9854_UDCLK1;                                //æ›´æ–°AD9854è¾“å‡º
+    AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_InitAM(void)
-//º¯Êı¹¦ÄÜ:AD9854µÄAM³õÊ¼»¯
-//Èë¿Ú²ÎÊı:ÎŞ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_InitAM(void)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„AMåˆå§‹åŒ–
+//å…¥å£å‚æ•°:æ— 
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_InitAM(void)
 {
-	uchar count;
+    uchar count;
 
-	const ulong Freq=60000;			 //ÉèÖÃÔØÆµ
+    const ulong Freq = 60000;			 //è®¾ç½®è½½é¢‘
 
-	uchar  Adress;
-	Adress=0x04;      //Ñ¡ÔñÆµÂÊ¿ØÖÆ×ÖµØÖ·µÄ³õÖµ
-	
-    AD9854_WR1;    //½«¶Á¡¢Ğ´¿ØÖÆ¶Ë¿ÚÉèÎªÎŞĞ§
+    uchar  Adress;
+    Adress = 0x04;    //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—åœ°å€çš„åˆå€¼
+
+    AD9854_WR1;    //å°†è¯»ã€å†™æ§åˆ¶ç«¯å£è®¾ä¸ºæ— æ•ˆ
     AD9854_RD1;
     AD9854_UDCLK0;
-    AD9854_RST1;     //¸´Î»AD9854
+    AD9854_RST1;     //å¤ä½AD9854
     AD9854_RST0;
 
-	AD9854_WR_Byte(0x1d,0x10);	                  //¹Ø±Õ±È½ÏÆ÷
-	AD9854_WR_Byte(0x1e,CLK_Set);	             //ÉèÖÃÏµÍ³Ê±ÖÓ±¶Æµ
-	AD9854_WR_Byte(0x1f,0x00);	                 //ÉèÖÃÏµÍ³ÎªÄ£Ê½0£¬ÓÉÍâ²¿¸üĞÂ
-	AD9854_WR_Byte(0x20,0x60);	                  //ÉèÖÃÎª¿Éµ÷½Ú·ù¶È£¬È¡Ïû²åÖµ²¹³¥
+    AD9854_WR_Byte(0x1d, 0x10);	                 //å…³é—­æ¯”è¾ƒå™¨
+    AD9854_WR_Byte(0x1e, CLK_Set);	            //è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿå€é¢‘
+    AD9854_WR_Byte(0x1f, 0x00);	                //è®¾ç½®ç³»ç»Ÿä¸ºæ¨¡å¼0ï¼Œç”±å¤–éƒ¨æ›´æ–°
+    AD9854_WR_Byte(0x20, 0x60);	                 //è®¾ç½®ä¸ºå¯è°ƒèŠ‚å¹…åº¦ï¼Œå–æ¶ˆæ’å€¼è¡¥å¿
 
-	Freq_convert(Freq);                            //ÆµÂÊ×ª»»
+    Freq_convert(Freq);                            //é¢‘ç‡è½¬æ¢
 
-	for(count=6;count>0;)	                         //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    for(count = 6; count > 0;)	                    //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress++, FreqWord[--count]);
     }
 
-	AD9854_UDCLK1;                             //¸üĞÂAD9854Êä³ö
+    AD9854_UDCLK1;                             //æ›´æ–°AD9854è¾“å‡º
     AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetAM(uchar Shape)
-//º¯Êı¹¦ÄÜ:AD9854µÄAMÉèÖÃ
-//Èë¿Ú²ÎÊı:Shape   12Bit·ù¶È,È¡Öµ´Ó0~4095   
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_SetAM(uchar Shape)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„AMè®¾ç½®
+//å…¥å£å‚æ•°:Shape   12Bitå¹…åº¦,å–å€¼ä»0~4095
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_SetAM(uint Shape)
 {
-	AD9854_WR_Byte(0x21,Shape>>8);	                  //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	                  //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));
+    AD9854_WR_Byte(0x21, Shape >> 8);	               //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
 
-	AD9854_UDCLK1;                                   //¸üĞÂAD9854Êä³ö
-    AD9854_UDCLK0;			
+    AD9854_WR_Byte(0x23, Shape >> 8);	               //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
+
+    AD9854_UDCLK1;                                   //æ›´æ–°AD9854è¾“å‡º
+    AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_InitRFSK(void)
-//º¯Êı¹¦ÄÜ:AD9854µÄRFSK³õÊ¼»¯
-//Èë¿Ú²ÎÊı:ÎŞ
-//³ö¿Ú²ÎÊı:ÎŞ
+//å‡½æ•°åç§°:void AD9854_InitRFSK(void)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„RFSKåˆå§‹åŒ–
+//å…¥å£å‚æ•°:æ— 
+//å‡ºå£å‚æ•°:æ— 
 //====================================================================================
 void AD9854_InitRFSK(void)
 {
-	AD9854_WR1;                      //½«¶Á¡¢Ğ´¿ØÖÆ¶Ë¿ÚÉèÎªÎŞĞ§
+    AD9854_WR1;                      //å°†è¯»ã€å†™æ§åˆ¶ç«¯å£è®¾ä¸ºæ— æ•ˆ
     AD9854_RD1;
     AD9854_UDCLK0;
-    AD9854_RST1;                     //¸´Î»AD9854
+    AD9854_RST1;                     //å¤ä½AD9854
     AD9854_RST0;
-	
-	AD9854_WR_Byte(0x1d,0x10);	       //¹Ø±Õ±È½ÏÆ÷
-	AD9854_WR_Byte(0x1e,CLK_Set);	   //ÉèÖÃÏµÍ³Ê±ÖÓ±¶Æµ
-	AD9854_WR_Byte(0x1f,0x24);	        //ÉèÖÃÏµÍ³ÎªÄ£Ê½2£¬ÓÉÍâ²¿¸üĞÂ,Ê¹ÄÜÈı½Ç²¨É¨Æµ¹¦ÄÜ
-	AD9854_WR_Byte(0x20,0x60);	        //ÉèÖÃÎª¿Éµ÷½Ú·ù¶È£¬È¡Ïû²åÖµ²¹³¥	
 
-	AD9854_UDCLK1;                   //¸üĞÂAD9854Êä³ö
+    AD9854_WR_Byte(0x1d, 0x10);	      //å…³é—­æ¯”è¾ƒå™¨
+    AD9854_WR_Byte(0x1e, CLK_Set);	  //è®¾ç½®ç³»ç»Ÿæ—¶é’Ÿå€é¢‘
+    AD9854_WR_Byte(0x1f, 0x24);	       //è®¾ç½®ç³»ç»Ÿä¸ºæ¨¡å¼2ï¼Œç”±å¤–éƒ¨æ›´æ–°,ä½¿èƒ½ä¸‰è§’æ³¢æ‰«é¢‘åŠŸèƒ½
+    AD9854_WR_Byte(0x20, 0x60);	       //è®¾ç½®ä¸ºå¯è°ƒèŠ‚å¹…åº¦ï¼Œå–æ¶ˆæ’å€¼è¡¥å¿
+
+    AD9854_UDCLK1;                   //æ›´æ–°AD9854è¾“å‡º
     AD9854_UDCLK0;
 }
 
 //====================================================================================
-//º¯ÊıÃû³Æ:void AD9854_SetRFSK(void)
-//º¯Êı¹¦ÄÜ:AD9854µÄRFSKÉèÖÃ
-//Èë¿Ú²ÎÊı:Freq_Low          RFSKµÍÆµÂÊ	   48Bit
-//         Freq_High         RFSK¸ßÆµÂÊ	   48Bit
-//         Freq_Up_Down		 ²½½øÆµÂÊ	   48Bit
-//		   FreRate           Ğ±ÂÊÊ±ÖÓ¿ØÖÆ  20Bit
-//³ö¿Ú²ÎÊı:ÎŞ
-//×¢£º     Ã¿Á½¸öÂö³åÖ®¼äµÄÊ±¼äÖÜÆÚÓÃÏÂÊ½±íÊ¾£¨FreRate +1£©*£¨System Clock £©£¬Ò»¸öÂö³å,
-//         ÆµÂÊ ÉÏÉı»òÕßÏÂ½µ Ò»¸ö²½½øÆµÂÊ
+//å‡½æ•°åç§°:void AD9854_SetRFSK(void)
+//å‡½æ•°åŠŸèƒ½:AD9854çš„RFSKè®¾ç½®
+//å…¥å£å‚æ•°:Freq_Low          RFSKä½é¢‘ç‡	   48Bit
+//         Freq_High         RFSKé«˜é¢‘ç‡	   48Bit
+//         Freq_Up_Down		 æ­¥è¿›é¢‘ç‡	   48Bit
+//		   FreRate           æ–œç‡æ—¶é’Ÿæ§åˆ¶  20Bit
+//å‡ºå£å‚æ•°:æ— 
+//æ³¨ï¼š     æ¯ä¸¤ä¸ªè„‰å†²ä¹‹é—´çš„æ—¶é—´å‘¨æœŸç”¨ä¸‹å¼è¡¨ç¤ºï¼ˆFreRate +1ï¼‰*ï¼ˆSystem Clock ï¼‰ï¼Œä¸€ä¸ªè„‰å†²,
+//         é¢‘ç‡ ä¸Šå‡æˆ–è€…ä¸‹é™ ä¸€ä¸ªæ­¥è¿›é¢‘ç‡
 //====================================================================================
-void AD9854_SetRFSK(ulong Freq_Low,ulong Freq_High,ulong Freq_Up_Down,ulong FreRate)
+void AD9854_SetRFSK(ulong Freq_Low, ulong Freq_High, ulong Freq_Up_Down, ulong FreRate)
 {
-	uchar count=6;
-	uchar Adress1,Adress2,Adress3;
-    const uint  Shape=4000;			   //·ù¶ÈÉèÖÃ. Îª12 Bit,È¡Öµ·¶Î§Îª(0~4095)
+    uchar count = 6;
+    uchar Adress1, Adress2, Adress3;
+    const uint  Shape = 4000;			 //å¹…åº¦è®¾ç½®. ä¸º12 Bit,å–å€¼èŒƒå›´ä¸º(0~4095)
 
-	Adress1=0x04;		     //Ñ¡ÔñÆµÂÊ¿ØÖÆ×ÖµØÖ·µÄ³õÖµ 
-	Adress2=0x0a;
-	Adress3=0x10;
+    Adress1 = 0x04;		   //é€‰æ‹©é¢‘ç‡æ§åˆ¶å­—åœ°å€çš„åˆå€¼
+    Adress2 = 0x0a;
+    Adress3 = 0x10;
 
-	Freq_convert(Freq_Low);                             //ÆµÂÊ1×ª»»
+    Freq_convert(Freq_Low);                             //é¢‘ç‡1è½¬æ¢
 
-	for(count=6;count>0;)	                         //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    for(count = 6; count > 0;)	                    //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress1++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress1++, FreqWord[--count]);
     }
 
-	Freq_convert(Freq_High);                             //ÆµÂÊ2×ª»»
+    Freq_convert(Freq_High);                             //é¢‘ç‡2è½¬æ¢
 
-	for(count=6;count>0;)	                         //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    for(count = 6; count > 0;)	                    //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress2++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress2++, FreqWord[--count]);
     }
 
-	Freq_convert(Freq_Up_Down);                             //²½½øÆµÂÊ×ª»»
+    Freq_convert(Freq_Up_Down);                             //æ­¥è¿›é¢‘ç‡è½¬æ¢
 
-	for(count=6;count>0;)	                               //Ğ´Èë6×Ö½ÚµÄÆµÂÊ¿ØÖÆ×Ö  
+    for(count = 6; count > 0;)	                          //å†™å…¥6å­—èŠ‚çš„é¢‘ç‡æ§åˆ¶å­—
     {
-		AD9854_WR_Byte(Adress3++,FreqWord[--count]);
+        AD9854_WR_Byte(Adress3++, FreqWord[--count]);
     }
 
-	AD9854_WR_Byte(0x1a,(uchar)((FreRate>>16)&0x0f));				   //ÉèÖÃĞ±ÉıËÙÂÊ
-	AD9854_WR_Byte(0x1b,(uchar)(FreRate>>8));
-	AD9854_WR_Byte(0x1c,(uchar)FreRate);				    
+    AD9854_WR_Byte(0x1a, (uchar)((FreRate >> 16) & 0x0f));				 //è®¾ç½®æ–œå‡é€Ÿç‡
+    AD9854_WR_Byte(0x1b, (uchar)(FreRate >> 8));
+    AD9854_WR_Byte(0x1c, (uchar)FreRate);
 
-	AD9854_WR_Byte(0x21,Shape>>8);	                  //ÉèÖÃIÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x22,(uchar)(Shape&0xff));
-	
-	AD9854_WR_Byte(0x23,Shape>>8);	                  //ÉèÖÃQÍ¨µÀ·ù¶È
-	AD9854_WR_Byte(0x24,(uchar)(Shape&0xff));
+    AD9854_WR_Byte(0x21, Shape >> 8);	               //è®¾ç½®Ié€šé“å¹…åº¦
+    AD9854_WR_Byte(0x22, (uchar)(Shape & 0xff));
 
-	AD9854_UDCLK=1;                                //¸üĞÂAD9854Êä³ö
-    AD9854_UDCLK=0;	
+    AD9854_WR_Byte(0x23, Shape >> 8);	               //è®¾ç½®Qé€šé“å¹…åº¦
+    AD9854_WR_Byte(0x24, (uchar)(Shape & 0xff));
+
+    AD9854_UDCLK1;                                //æ›´æ–°AD9854è¾“å‡º
+    AD9854_UDCLK0;
 }
 
-//================================================================= 
-// º¯ÊıÃû³Æ £ºvoid delay (uint us)
-// º¯Êı¹¦ÄÜ £ºus¼¶ÑÓÊ±,´ó¸Å2~4 us
-// Èë¿Ú²ÎÊı £ºus  ÑÓÊ±Ê±¼äµÄ³¤¶Ì
-// ³ö¿Ú²ÎÊı £ºÎŞ
-//================================================================= 
-void delay (uint us)   
+//=================================================================
+// å‡½æ•°åç§° ï¼švoid delay (uint us)
+// å‡½æ•°åŠŸèƒ½ ï¼šusçº§å»¶æ—¶,å¤§æ¦‚2~4 us
+// å…¥å£å‚æ•° ï¼šus  å»¶æ—¶æ—¶é—´çš„é•¿çŸ­
+// å‡ºå£å‚æ•° ï¼šæ— 
+//=================================================================
+void delay (uint us)
 {
-	uint i;
-	for(i=0;i<us;i++)
-	_nop_();
+    uint i;
+    for(i = 0; i < us; i++)
+        __NOP();
 }
 
-//²âÊÔÕıÏÒ²¨£¬²ÉÓÃ120MHZ SYSCLKÊ±,³öÀ´10MHZ²¨ĞÎ£¬²¨ĞÎºÜºÃ£¬²âÊÔ³É¹¦
-//µ±²ÉÓÃ300MHZ SYSCLKÊ±,²âÊÔ50MHZ²¨ĞÎÊ±,DDS·¢ÈÈÀ÷º¦,ÇÒ²¨ĞÎË¥¼õÑÏÖØ,·ù¶ÈÔÚ35mV×óÓÒ
+//æµ‹è¯•æ­£å¼¦æ³¢ï¼Œé‡‡ç”¨120MHZ SYSCLKæ—¶,å‡ºæ¥10MHZæ³¢å½¢ï¼Œæ³¢å½¢å¾ˆå¥½ï¼Œæµ‹è¯•æˆåŠŸ
+//å½“é‡‡ç”¨300MHZ SYSCLKæ—¶,æµ‹è¯•50MHZæ³¢å½¢æ—¶,DDSå‘çƒ­å‰å®³,ä¸”æ³¢å½¢è¡°å‡ä¸¥é‡,å¹…åº¦åœ¨35mVå·¦å³
 
 //int main()
 //{
 //	AD9854_Init();
 //	AD9854_SetSine(10000000,4000);
-//	while(1);			
+//	while(1);
 //}
 
 
-//²âÊÔÕıÏÒ²¨£¬²ÉÓÃ120MHZ SYSCLKÊ±,³öÀ´87.697HZ²¨ĞÎ£¬²¨ĞÎºÜºÃ£¬²âÊÔ³É¹¦
+//æµ‹è¯•æ­£å¼¦æ³¢ï¼Œé‡‡ç”¨120MHZ SYSCLKæ—¶,å‡ºæ¥87.697HZæ³¢å½¢ï¼Œæ³¢å½¢å¾ˆå¥½ï¼Œæµ‹è¯•æˆåŠŸ
 /*
 int main()
 {
 	AD9854_Init();
 	AD9854_SetSine_double(87.697,4000);
-	while(1);			
-} 
+	while(1);
+}
 */
 
-//²âÊÔFSK£¬²ÉÓÃ120MHZ SYSCLK,1KºÍ6K,²âÊÔ³É¹¦,½á¹û¶ÔÓ¦"FSK²¨ĞÎ.bmp"
+//æµ‹è¯•FSKï¼Œé‡‡ç”¨120MHZ SYSCLK,1Kå’Œ6K,æµ‹è¯•æˆåŠŸ,ç»“æœå¯¹åº”"FSKæ³¢å½¢.bmp"
 /*
 int main()
 {
@@ -685,14 +712,14 @@ int main()
 	while(1)
 	{
 		AD9854_FDATA = 1;
-		delay(30000);	      //ÑÓÊ±Ê±¼ä³¤£¬±ãÓÚ¹Û²ì
+		delay(30000);	      //å»¶æ—¶æ—¶é—´é•¿ï¼Œä¾¿äºè§‚å¯Ÿ
 		AD9854_FDATA = 0;
 		delay(30000);
-	}			
-} 
+	}
+}
 */
 
-//²âÊÔBPSK£¬²ÉÓÃ120MHZ SYSCLK,²âÊÔ³É¹¦
+//æµ‹è¯•BPSKï¼Œé‡‡ç”¨120MHZ SYSCLK,æµ‹è¯•æˆåŠŸ
 /*
 int main()
 {
@@ -701,15 +728,15 @@ int main()
 	while(1)
 	{
 		AD9854_FDATA = 1;
-		delay(10);	      
+		delay(10);
 		AD9854_FDATA = 0;
 		delay(10);
-	}			
-} 
+	}
+}
 */
 
 
-//²âÊÔOSK£¬²ÉÓÃ120MHZ SYSCLK,²âÊÔ³É¹¦
+//æµ‹è¯•OSKï¼Œé‡‡ç”¨120MHZ SYSCLK,æµ‹è¯•æˆåŠŸ
 /*
 int main()
 {
@@ -717,15 +744,15 @@ int main()
 	AD9854_SetOSK(10);
 	while(1)
 	{
-		AD9854_OSK=1;	
-		delay(30); 
-		AD9854_OSK=0;	
+		AD9854_OSK=1;
 		delay(30);
-	}			
-} 
+		AD9854_OSK=0;
+		delay(30);
+	}
+}
 */
 
-//²âÊÔAM£¬²ÉÓÃ120MHZ SYSCLK,²âÊÔ³É¹¦
+//æµ‹è¯•AMï¼Œé‡‡ç”¨120MHZ SYSCLK,æµ‹è¯•æˆåŠŸ
 /*
 int main()
 {
@@ -733,14 +760,14 @@ int main()
 	while(1)
 	{
 		AD9854_SetAM(2000);
-		delay(10);	      
+		delay(10);
 		AD9854_SetAM(4000);
 		delay(10);
-	}			
+	}
 }
 */
 
-//²âÊÔRFSK£¬²ÉÓÃ120MHZ SYSCLK,²âÊÔ³É¹¦
+//æµ‹è¯•RFSKï¼Œé‡‡ç”¨120MHZ SYSCLK,æµ‹è¯•æˆåŠŸ
 /*
 int main()
 {
@@ -749,9 +776,9 @@ int main()
 	while(1)
 	{
 		AD9854_FDATA = 1;
-		delay(30000);	      //ÑÓÊ±Ê±¼ä³¤£¬±ãÓÚ¹Û²ì
+		delay(30000);	      //å»¶æ—¶æ—¶é—´é•¿ï¼Œä¾¿äºè§‚å¯Ÿ
 		AD9854_FDATA = 0;
 		delay(30000);
-	} 
-}			
+	}
+}
 */
