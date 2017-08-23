@@ -149,33 +149,15 @@ const double Freq_mult_doulle = 938249.9223688533;
 //====================================================================================
 void AD9854_WR_Byte(uchar addr, uchar dat)
 {
-    uint32_t temp;
 
-    temp = (0x0000ffff & addr) | (0xffff0000 & (~addr << 16U));
-    GPIOC->BSRR = temp;
-    temp = (0x0000ffff & dat) | (0xffff0000 & (~dat << 16U));
-    GPIOD->BSRR = temp;
+    GPIOC->BSRR = (0x0000ffff & addr) | (0xffff0000 & (~addr << 16U));
+    GPIOD->BSRR = (0x0000ffff & addr) | (0xffff0000 & (~addr << 16U));
     AD9854_WR0;
     delay(DELAY);
     AD9854_WR1;
     delay(DELAY);
 }
 
-uchar AD9854_RD_Byte(uchar addr)
-{
-    uchar data;
-    uint32_t temp;
-
-    temp = (0x0000ffff & addr) | (0xffff0000 & (~addr << 16U));
-    GPIOC->BSRR = temp;
-    AD9854_RD0;
-    delay(DELAY);
-    data = GPIOD->IDR;
-    AD9854_RD1;
-    delay(DELAY);
-
-    return data;
-}
 
 //====================================================================================
 //函数名称:void AD9854_Init(void)
